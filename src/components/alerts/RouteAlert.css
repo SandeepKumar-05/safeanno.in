@@ -1,0 +1,104 @@
+.route-alert {
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  padding: 1.5rem;
+}
+
+.route-alert__description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.route-alert__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  .route-alert__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.route-alert__input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.route-alert__input:focus {
+  outline: none;
+  border-color: var(--color-info);
+}
+
+.route-alert__input::placeholder {
+  color: var(--text-muted);
+}
+
+.route-alert__phone {
+  grid-column: 1 / -1;
+}
+
+.route-alert__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.route-alert__subscribe-btn {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #2980b9, #1a5276);
+  color: #fff;
+  border: none;
+  border-radius: 0;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(41, 128, 185, 0.3);
+  min-height: 48px;
+}
+
+.route-alert__subscribe-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(41, 128, 185, 0.4);
+}
+
+.route-alert__subscribe-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.route-alert__status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--color-success) 10%, var(--surface-elevated));
+  border: 1px solid var(--color-success);
+  border-radius: 0;
+  font-size: 0.85rem;
+  color: var(--color-success);
+  margin-top: 1rem;
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
