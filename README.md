@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🌊 വെള്ളം കേറിയോ? (Vellam Keriyo?)
 
 **Real-time community disaster alert system for Kerala, India.**
@@ -36,8 +35,8 @@ A production-ready web application where citizens can report disasters (floods, 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-repo/vellam-keriyo.git
-cd vellam-keriyo
+git clone https://github.com/SandeepKumar-05/VellamKeriyo.in.git
+cd VellamKeriyo.in
 ```
 
 ### 2. Install dependencies
