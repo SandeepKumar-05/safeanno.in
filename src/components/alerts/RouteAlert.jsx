@@ -1,146 +1,195 @@
-import React, { useState } from 'react';
-import SectionHeading from '../ui/SectionHeading';
-import { geocodePlace } from '../../lib/geocode';
-import { saveRouteAlert } from './PushManager';
-import { usePushAlert } from '../../hooks/usePushAlert';
+import React, { useState, useCallback } from 'react';
+import { supabase } from '../../lib/supabase';
+import { getRoadRoute, toGeoJSON } from '../../lib/routing';
+import { formatDistance, formatDuration } from '../../lib/formatters';
 import { useSession } from '../../hooks/useSession';
+import { usePushAlert } from '../../hooks/usePushAlert';
 import { useToast } from '../../hooks/useToast';
+import LocationAutocomplete from '../ui/LocationAutocomplete';
+import SectionHeading from '../ui/SectionHeading';
 import './RouteAlert.css';
 
 /**
- * Route-based alert subscription form.
- * Users enter origin/destination, subscribe to push notifications
- * for disasters along their route.
+ * Route alert subscription panel.
+ * Users pick origin + destination via autocomplete,
+ * system fetches real road route from OSRM,
+ * saves to Supabase with push subscription.
  */
-export default function RouteAlert() {
+export default function RouteAlert({ onRouteCalculated }) {
   const sessionId = useSession();
-  const { subscribe, isSubscribed } = usePushAlert();
+  const { subscription, isSubscribed, subscribe } = usePushAlert();
   const { addToast } = useToast();
 
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [phone, setPhone] = useState('');
+  const [origin, setOrigin] = useState(null);
+  const [destination, setDestination] = useState(null);
+  const [routeData, setRouteData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [subscribed, setSubscribed] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [phone, setPhone] = useState('');
 
-  const handleSubscribe = async () => {
-    if (!origin.trim() || !destination.trim()) {
-      addToast('ആരംഭ സ്ഥലവും ലക്ഷ്യസ്ഥാനവും നൽകുക (Enter origin and destination)', 'warning');
+  // Calculate route when both points are set
+  const handleCalculateRoute = useCallback(async () => {
+    if (!origin || !destination) {
+      addToast('ഉറവിടവും ലക്ഷ്യസ്ഥാനവും തിരഞ്ഞെടുക്കുക (Select origin & destination)', 'warning');
       return;
     }
 
     setLoading(true);
+    setRouteData(null);
 
     try {
-      // Geocode both places
-      const [originResult, destResult] = await Promise.all([
-        geocodePlace(origin),
-        geocodePlace(destination),
-      ]);
+      const route = await getRoadRoute(
+        origin.lat, origin.lng,
+        destination.lat, destination.lng
+      );
 
-      if (!originResult) {
-        addToast(`"${origin}" കണ്ടെത്താൻ കഴിഞ്ഞില്ല (Origin not found)`, 'error');
-        setLoading(false);
-        return;
-      }
-      if (!destResult) {
-        addToast(`"${destination}" കണ്ടെത്താൻ കഴിഞ്ഞില്ല (Destination not found)`, 'error');
-        setLoading(false);
-        return;
+      setRouteData(route);
+
+      // Notify parent to display route on map
+      if (onRouteCalculated) {
+        onRouteCalculated(route);
       }
 
-      // Subscribe to push notifications
-      let pushSub = null;
+      addToast('✅ Route calculated!', 'success');
+    } catch (err) {
+      console.error('Route calculation error:', err);
+      addToast(`❌ ${err.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [origin, destination, onRouteCalculated, addToast]);
+
+  // Save route with push subscription
+  const handleSaveRoute = useCallback(async () => {
+    if (!routeData || !origin || !destination) return;
+
+    setLoading(true);
+
+    try {
+      // Subscribe to push if not already
+      let pushSub = subscription;
       if (!isSubscribed) {
         pushSub = await subscribe();
       }
 
-      // Save route to database
-      await saveRouteAlert({
-        sessionId,
-        subscription: pushSub,
-        originName: origin,
-        destinationName: destination,
-        originLat: originResult.lat,
-        originLng: originResult.lng,
-        destLat: destResult.lat,
-        destLng: destResult.lng,
-        phone: phone || null,
-      });
+      const { error } = await supabase
+        .from('routes')
+        .insert({
+          session_id: sessionId,
+          origin_name: origin.displayName,
+          destination_name: destination.displayName,
+          origin_lat: origin.lat,
+          origin_lng: origin.lng,
+          dest_lat: destination.lat,
+          dest_lng: destination.lng,
+          route: toGeoJSON(routeData.coordinates),
+          push_subscription: pushSub ? JSON.stringify(pushSub) : null,
+          phone: phone || null,
+        });
 
-      setSubscribed(true);
-      addToast('🔔 അലേർട്ടുകൾ സജ്ജമാക്കി! (Alerts activated!)', 'success');
+      if (error) throw error;
+
+      setSaved(true);
+      addToast('✅ Route alert saved! You will be notified of disasters along this route.', 'success');
     } catch (err) {
-      console.error('Route alert error:', err);
-      addToast(`പരാജയപ്പെട്ടു: ${err.message}`, 'error');
+      console.error('Save route error:', err);
+      addToast(`❌ ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [routeData, origin, destination, sessionId, subscription, isSubscribed, subscribe, phone, addToast]);
 
   return (
-    <section className="route-alert" id="route-alert-section">
+    <section className="route-alert-section" id="route-alert">
       <SectionHeading
-        titleMl="യാത്രാ മുന്നറിയിപ്പ്"
-        titleEn="Route Alerts"
-        icon="🔔"
+        icon="🛣️"
+        titleMl="റൂട്ട് അലേർട്ട്"
+        subtitleEn="Get alerts along your travel route"
       />
 
-      <p className="route-alert__description">
-        നിങ്ങളുടെ യാത്രാ പാതയിൽ ദുരന്തം റിപ്പോർട്ട് ചെയ്യപ്പെട്ടാൽ ഉടൻ അറിയിപ്പ് ലഭിക്കും.
-        <br />
-        <small>Get instant alerts when disasters are reported along your travel route.</small>
-      </p>
-
-      <div className="route-alert__fields">
-        <input
-          type="text"
-          className="route-alert__input"
-          placeholder="ആരംഭ സ്ഥലം (Origin)"
-          value={origin}
-          onChange={(e) => setOrigin(e.target.value)}
-          id="route-origin"
-        />
-        <input
-          type="text"
-          className="route-alert__input"
-          placeholder="ലക്ഷ്യസ്ഥാനം (Destination)"
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-          id="route-destination"
-        />
-        <input
-          type="tel"
-          className="route-alert__input route-alert__phone"
-          placeholder="ഫോൺ നമ്പർ — ഓപ്ഷണൽ (Phone — optional)"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          id="route-phone"
-        />
-      </div>
-
-      <div className="route-alert__actions">
-        <button
-          className="route-alert__subscribe-btn"
-          onClick={handleSubscribe}
-          disabled={loading || subscribed}
-          id="route-subscribe-btn"
-        >
-          {loading ? (
-            <><span className="spinner" /> സജ്ജമാക്കുന്നു...</>
-          ) : subscribed ? (
-            '🔔 അലേർട്ടുകൾ സജീവം (Alerts Active)'
-          ) : (
-            '🔔 അലേർട്ട് സജ്ജമാക്കുക (Subscribe)'
-          )}
-        </button>
-      </div>
-
-      {subscribed && (
-        <div className="route-alert__status">
-          🔔 അലേർട്ടുകൾ സജീവം — Alerts active for {origin} → {destination}
+      <div className="route-alert__form">
+        <div className="route-alert__field">
+          <label className="route-alert__label">
+            ഉറവിടം <span className="route-alert__label-en">(Origin)</span>
+          </label>
+          <LocationAutocomplete
+            placeholder="ഉറവിടം തിരയുക (Search origin)"
+            onSelect={setOrigin}
+            value={origin}
+            id="route-origin"
+          />
         </div>
-      )}
+
+        <div className="route-alert__field">
+          <label className="route-alert__label">
+            ലക്ഷ്യസ്ഥാനം <span className="route-alert__label-en">(Destination)</span>
+          </label>
+          <LocationAutocomplete
+            placeholder="ലക്ഷ്യസ്ഥാനം തിരയുക (Search destination)"
+            onSelect={setDestination}
+            value={destination}
+            id="route-destination"
+          />
+        </div>
+
+        {/* Optional phone */}
+        <div className="route-alert__field">
+          <label className="route-alert__label">
+            ഫോൺ <span className="route-alert__label-en">(Phone — optional SMS alerts)</span>
+          </label>
+          <input
+            type="tel"
+            className="route-alert__input"
+            placeholder="9876543210"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+            maxLength={10}
+          />
+        </div>
+
+        {/* Calculate button */}
+        {!routeData && (
+          <button
+            className="route-alert__btn route-alert__btn--calculate"
+            onClick={handleCalculateRoute}
+            disabled={loading || !origin || !destination}
+            type="button"
+          >
+            {loading ? '⏳ Calculating...' : '🗺️ Calculate Route'}
+          </button>
+        )}
+
+        {/* Route info */}
+        {routeData && (
+          <>
+            <div className="route-info">
+              <div className="route-info__item">
+                📏 <strong>{formatDistance(routeData.distanceKm)}</strong>
+              </div>
+              <div className="route-info__item">
+                ⏱ <strong>{formatDuration(routeData.durationMin)}</strong>
+              </div>
+            </div>
+
+            {!saved && (
+              <button
+                className="route-alert__btn route-alert__btn--save"
+                onClick={handleSaveRoute}
+                disabled={loading}
+                type="button"
+              >
+                {loading ? '⏳ Saving...' : '🔔 Save & Get Alerts'}
+              </button>
+            )}
+
+            {saved && (
+              <div className="route-alert__success">
+                ✅ Route alert active! Disasters along this route will trigger notifications.
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </section>
   );
 }

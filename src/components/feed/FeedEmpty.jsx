@@ -1,17 +1,17 @@
 import React from 'react';
 
 /**
- * Empty state when no reports are available
+ * Empty state for live feed when no reports exist.
  */
 export default function FeedEmpty() {
   return (
-    <div className="feed-empty" id="feed-empty">
+    <div className="feed-empty">
       <div className="feed-empty__icon">🌤️</div>
-      <p className="feed-empty__title">
-        ഇപ്പോൾ റിപ്പോർട്ടുകൾ ഇല്ല
-      </p>
+      <h3 className="feed-empty__title">
+        റിപ്പോർട്ടുകൾ ഇല്ല
+      </h3>
       <p className="feed-empty__subtitle">
-        No reports at the moment — that's good news!
+        No active reports — stay safe!
       </p>
     </div>
   );

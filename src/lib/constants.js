@@ -1,3 +1,4 @@
+// ── Disaster Types ──────────────────────────────────────
 export const DISASTER_TYPES = [
   { id: 'flood',     icon: '🌊', labelMl: 'വെള്ളപ്പൊക്കം',      labelEn: 'Flood',         color: '#2980b9' },
   { id: 'landslide', icon: '🏔️', labelMl: 'ഉരുൾപൊട്ടൽ',        labelEn: 'Landslide',     color: '#8e6f3e' },
@@ -9,21 +10,37 @@ export const DISASTER_TYPES = [
   { id: 'power',     icon: '⚡', labelMl: 'വൈദ്യുതി തകരാർ',     labelEn: 'Power Failure', color: '#e74c3c' },
 ];
 
+// ── Map Config ──────────────────────────────────────────
 export const MAP_CENTER = [10.8505, 76.2711];
 export const MAP_ZOOM = 8;
 export const MAP_MIN_ZOOM = 7;
 export const MAP_MAX_ZOOM = 17;
+
+// ── Kerala Bounding Box for Nominatim ───────────────────
+export const KERALA_VIEWBOX = '74.8,8.2,77.6,12.8';
+
+// ── OSRM Routing ────────────────────────────────────────
+export const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving';
+
+// ── Alert & Safety Thresholds ───────────────────────────
 export const ALERT_RADIUS_METRES = 5000;
+export const GEOFENCE_RADIUS_KM = 3;
 export const REPORT_EXPIRY_HOURS = 6;
 export const CONFIRM_THRESHOLD = 3;
 export const RATE_LIMIT_SECONDS = 120;
 
+// ── Alert Sound (Web Audio API) ─────────────────────────
+export const ALERT_SOUND_FREQ = 880;
+export const ALERT_SOUND_DURATION = 0.3;
+
+// ── Severity Levels ─────────────────────────────────────
 export const SEVERITY_LEVELS = [
-  { id: 'low',  labelMl: 'കുറവ്',  labelEn: 'Low',    color: '#27ae60' },
-  { id: 'med',  labelMl: 'മധ്യം',  labelEn: 'Medium', color: '#d35400' },
+  { id: 'low',  labelMl: 'കുറവ്',    labelEn: 'Low',    color: '#27ae60' },
+  { id: 'med',  labelMl: 'മധ്യം',    labelEn: 'Medium', color: '#d35400' },
   { id: 'high', labelMl: 'ഉയർന്നത്', labelEn: 'High',   color: '#c0392b' },
 ];
 
+// ── Alert Level Colors ──────────────────────────────────
 export const ALERT_LEVEL_COLORS = {
   red:    '#c0392b',
   orange: '#d35400',
@@ -31,6 +48,7 @@ export const ALERT_LEVEL_COLORS = {
   green:  '#27ae60',
 };
 
+// ── Emergency Numbers ───────────────────────────────────
 export const EMERGENCY_NUMBERS = [
   { number: '112',  labelMl: 'അടിയന്തര സഹായം',   labelEn: 'Emergency' },
   { number: '1077', labelMl: 'ദുരന്ത നിവാരണം',    labelEn: 'KSDMA' },
@@ -40,6 +58,7 @@ export const EMERGENCY_NUMBERS = [
   { number: '108',  labelMl: 'ആംബുലൻസ്',            labelEn: 'Ambulance' },
 ];
 
+// ── Safety Tips ─────────────────────────────────────────
 export const SAFETY_TIPS = [
   {
     type: 'flood',
@@ -85,5 +104,38 @@ export const SAFETY_TIPS = [
   },
 ];
 
+// ── Map Tiles ───────────────────────────────────────────
 export const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 export const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+// ── District Name Mapping (legacy → canonical) ─────────
+export const DISTRICT_NAME_MAP = {
+  'Trivandrum': 'Thiruvananthapuram',
+  'Quilon': 'Kollam',
+  'Alleppey': 'Alappuzha',
+  'Kochi': 'Ernakulam',
+  'Trichur': 'Thrissur',
+  'Palghat': 'Palakkad',
+  'Calicut': 'Kozhikode',
+  'Cannanore': 'Kannur',
+  'Kasargod': 'Kasaragod',
+  'Thiruvananthapuram': 'Thiruvananthapuram',
+  'Kollam': 'Kollam',
+  'Pathanamthitta': 'Pathanamthitta',
+  'Alappuzha': 'Alappuzha',
+  'Kottayam': 'Kottayam',
+  'Idukki': 'Idukki',
+  'Ernakulam': 'Ernakulam',
+  'Thrissur': 'Thrissur',
+  'Palakkad': 'Palakkad',
+  'Malappuram': 'Malappuram',
+  'Kozhikode': 'Kozhikode',
+  'Wayanad': 'Wayanad',
+  'Kannur': 'Kannur',
+  'Kasaragod': 'Kasaragod',
+};
+
+// ── Photo Upload Config ─────────────────────────────────
+export const PHOTO_MAX_WIDTH = 800;
+export const PHOTO_QUALITY = 0.7;
+export const PHOTO_BUCKET = 'report-photos';

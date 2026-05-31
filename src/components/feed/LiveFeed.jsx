@@ -1,58 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import FeedCard from './FeedCard';
 import FeedEmpty from './FeedEmpty';
-import LiveBadge from '../ui/LiveBadge';
+import Skeleton from '../ui/Skeleton';
 import SectionHeading from '../ui/SectionHeading';
+import LiveBadge from '../ui/LiveBadge';
 
 /**
- * Scrollable live feed of disaster reports.
- * New reports appear at the top via Supabase Realtime.
+ * Live feed of disaster reports with skeleton loading state.
  */
-export default function LiveFeed({ reports, loading, onCardClick }) {
-  const [seenIds, setSeenIds] = useState(new Set());
-
-  // Track which reports were present on first render to mark "new" ones
-  useEffect(() => {
-    if (reports.length > 0 && seenIds.size === 0) {
-      setSeenIds(new Set(reports.map((r) => r.id)));
-    }
-  }, [reports, seenIds.size]);
-
-  // Mark new reports that arrive after initial load
-  useEffect(() => {
-    if (seenIds.size > 0) {
-      const timer = setTimeout(() => {
-        setSeenIds(new Set(reports.map((r) => r.id)));
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [reports, seenIds]);
-
+export default function LiveFeed({ reports = [], loading, onCardClick, onConfirm }) {
   return (
-    <section className="live-feed" id="live-feed-section">
+    <section id="live-feed">
       <div className="live-feed__header">
         <SectionHeading
-          titleMl="തത്സമയ അപ്ഡേറ്റുകൾ"
-          titleEn="Live Updates"
-          icon="📡"
+          icon="📋"
+          titleMl="തത്സമയ ഫീഡ്"
+          subtitleEn="Live Feed"
         />
         <LiveBadge />
       </div>
 
       <div className="live-feed__list">
         {loading ? (
-          <div className="feed-loading">
-            <span className="spinner" /> ലോഡ് ചെയ്യുന്നു...
-          </div>
+          // Skeleton loading
+          Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="feed-card" style={{ padding: '1rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <Skeleton width="40px" height="40px" borderRadius="50%" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton width="60%" height="1em" />
+                  <Skeleton width="40%" height="0.8em" />
+                </div>
+              </div>
+              <Skeleton count={2} height="0.8em" />
+            </div>
+          ))
         ) : reports.length === 0 ? (
           <FeedEmpty />
         ) : (
-          reports.slice(0, 20).map((report) => (
+          reports.map((report) => (
             <FeedCard
               key={report.id}
               report={report}
               onClick={onCardClick}
-              isNew={!seenIds.has(report.id)}
+              onConfirm={onConfirm}
             />
           ))
         )}

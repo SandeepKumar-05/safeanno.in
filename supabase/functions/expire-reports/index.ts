@@ -1,7 +1,8 @@
 /**
- * expire-reports — Supabase Edge Function (JS)
+ * expire-reports — Supabase Edge Function
  * Runs every hour via cron.
- * Cleans up expired reports and extends confirmed ones.
+ * Cleans up expired reports, extends confirmed ones,
+ * removes orphaned photos from storage.
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.44.0';
@@ -14,7 +15,15 @@ serve(async (_req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const now = new Date().toISOString();
 
-    // 1. Delete expired reports with fewer than 3 confirmations
+    // 1. Get expired reports with photos (for cleanup)
+    const { data: expiredWithPhotos } = await supabase
+      .from('reports')
+      .select('id, photo_url')
+      .lt('expires_at', now)
+      .lt('confirm_count', 3)
+      .not('photo_url', 'is', null);
+
+    // 2. Delete expired reports with fewer than 3 confirmations
     const { data: deletedReports, error: deleteError } = await supabase
       .from('reports')
       .delete()
@@ -24,7 +33,31 @@ serve(async (_req) => {
 
     if (deleteError) console.error('Error deleting expired reports:', deleteError);
 
-    // 2. Extend well-confirmed reports about to expire
+    // 3. Clean up orphaned photos from storage
+    if (expiredWithPhotos && expiredWithPhotos.length > 0) {
+      const photoPaths = expiredWithPhotos
+        .filter((r) => r.photo_url)
+        .map((r) => {
+          // Extract path from URL
+          const parts = r.photo_url.split('/');
+          return parts[parts.length - 1]; // filename like "uuid.jpg"
+        })
+        .filter(Boolean);
+
+      if (photoPaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('report-photos')
+          .remove(photoPaths);
+
+        if (storageError) {
+          console.error('Error removing photos:', storageError);
+        } else {
+          console.log(`Cleaned up ${photoPaths.length} photos`);
+        }
+      }
+    }
+
+    // 4. Extend well-confirmed reports about to expire
     const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     const sixHoursFromNow = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
 
@@ -37,7 +70,7 @@ serve(async (_req) => {
 
     if (extendError) console.error('Error extending confirmed reports:', extendError);
 
-    // 3. Delete old routes (older than 24 hours)
+    // 5. Delete old routes (older than 24 hours)
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const { data: deletedRoutes, error: routeDeleteError } = await supabase
@@ -54,6 +87,7 @@ serve(async (_req) => {
         reports_deleted: deletedReports?.length || 0,
         reports_extended: extendedReports?.length || 0,
         routes_deleted: deletedRoutes?.length || 0,
+        photos_cleaned: expiredWithPhotos?.length || 0,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

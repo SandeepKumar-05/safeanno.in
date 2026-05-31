@@ -1,18 +1,18 @@
 import React from 'react';
+import { SAFETY_TIPS } from '../../lib/constants';
 import TipCard from './TipCard';
 import SectionHeading from '../ui/SectionHeading';
-import { SAFETY_TIPS } from '../../lib/constants';
 
 /**
- * Safety tips section — rendered from constants, not hardcoded
+ * Safety tips grid — bilingual disaster safety guidelines.
  */
 export default function SafetyTips() {
   return (
-    <section className="safety-tips" id="safety-tips-section">
+    <section id="safety-tips">
       <SectionHeading
-        titleMl="സുരക്ഷാ നിർദ്ദേശങ്ങൾ"
-        titleEn="Safety Tips"
         icon="🛡️"
+        titleMl="സുരക്ഷാ നിർദ്ദേശങ്ങൾ"
+        subtitleEn="Safety Tips"
       />
       <div className="safety-tips__grid">
         {SAFETY_TIPS.map((tip) => (

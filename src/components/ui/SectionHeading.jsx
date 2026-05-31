@@ -1,17 +1,17 @@
 import React from 'react';
 
 /**
- * Bilingual section heading — Malayalam title with English subtitle
+ * Reusable section heading with icon, Malayalam title, and English subtitle.
  */
-export default function SectionHeading({ titleMl, titleEn, icon, id }) {
+export default function SectionHeading({ icon, titleMl, subtitleEn }) {
   return (
-    <div className="section-heading" id={id}>
+    <div className="section-heading">
       <h2 className="section-heading__title">
         {icon && <span className="section-heading__icon">{icon}</span>}
         {titleMl}
       </h2>
-      {titleEn && (
-        <p className="section-heading__subtitle">{titleEn}</p>
+      {subtitleEn && (
+        <p className="section-heading__subtitle">{subtitleEn}</p>
       )}
     </div>
   );

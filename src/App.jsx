@@ -19,18 +19,22 @@ import { ToastProvider } from './context/ToastContext';
 
 // Layout
 import Header from './components/layout/Header';
+import AlertTicker from './components/layout/AlertTicker';
 import AlertBanner from './components/layout/AlertBanner';
 import Footer from './components/layout/Footer';
 
 // Components
 import RainBackground from './components/ui/RainBackground';
 import Toast from './components/ui/Toast';
+import EmergencyBar from './components/ui/EmergencyBar';
+import OfflineBanner from './components/ui/OfflineBanner';
 import MapView from './components/map/MapView';
 import ReportForm from './components/report/ReportForm';
 import LiveFeed from './components/feed/LiveFeed';
 import StatsRow from './components/stats/StatsRow';
 import DistrictGrid from './components/districts/DistrictGrid';
 import RouteAlert from './components/alerts/RouteAlert';
+import DrivingAlert from './components/alerts/DrivingAlert';
 import SafetyTips from './components/tips/SafetyTips';
 import EmergencyNumbers from './components/emergency/EmergencyNumbers';
 
@@ -39,6 +43,7 @@ import { useReports } from './hooks/useReports';
 import { useSession } from './hooks/useSession';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useToast } from './hooks/useToast';
+import { useTravelAlert } from './hooks/useTravelAlert';
 
 // Utils
 import { confirmReport } from './components/alerts/PushManager';
@@ -49,12 +54,23 @@ import { confirmReport } from './components/alerts/PushManager';
 function AppContent() {
   const { reports, loading } = useReports();
   const sessionId = useSession();
-  const { position } = useGeolocation();
+  const { position, accuracy, getPosition } = useGeolocation();
   const { addToast } = useToast();
   const mapRef = useRef(null);
 
   const [showReportForm, setShowReportForm] = useState(false);
   const [reportCoords, setReportCoords] = useState(null);
+  const [routeData, setRouteData] = useState(null);
+  const [drivingAlertReport, setDrivingAlertReport] = useState(null);
+
+  // Geofencing while driving — triggers fullscreen alert
+  const { isTracking } = useTravelAlert({
+    enabled: !!routeData,
+    reports,
+    onAlert: useCallback((report) => {
+      setDrivingAlertReport(report);
+    }, []),
+  });
 
   // Handle map click — set coords for report form
   const handleMapClick = useCallback((coords) => {
@@ -67,7 +83,6 @@ function AppContent() {
   // Handle report button click
   const handleReportClick = useCallback(() => {
     setShowReportForm(true);
-    // Scroll to form after a tick
     setTimeout(() => {
       document.getElementById('report-form')?.scrollIntoView({
         behavior: 'smooth',
@@ -98,6 +113,11 @@ function AppContent() {
     [sessionId, addToast]
   );
 
+  // Handle route calculated from RouteAlert
+  const handleRouteCalculated = useCallback((route) => {
+    setRouteData(route);
+  }, []);
+
   // Smooth scroll to a section
   const handleScrollTo = useCallback((sectionId) => {
     document.getElementById(sectionId)?.scrollIntoView({
@@ -106,11 +126,18 @@ function AppContent() {
     });
   }, []);
 
+  // Dismiss driving alert
+  const handleDrivingAlertDismiss = useCallback(() => {
+    setDrivingAlertReport(null);
+  }, []);
+
   return (
     <>
       <RainBackground />
       <div className="app-wrapper">
         <Header onScrollTo={handleScrollTo} />
+        <AlertTicker />
+        <OfflineBanner />
         <AlertBanner />
 
         <main className="app-main">
@@ -126,6 +153,8 @@ function AppContent() {
                 onReportClick={handleReportClick}
                 sessionId={sessionId}
                 userPosition={position}
+                userAccuracy={accuracy}
+                routeData={routeData}
               />
 
               {showReportForm && (
@@ -147,10 +176,11 @@ function AppContent() {
               reports={reports}
               loading={loading}
               onCardClick={handleFeedCardClick}
+              onConfirm={handleConfirm}
             />
           </div>
 
-          <RouteAlert />
+          <RouteAlert onRouteCalculated={handleRouteCalculated} />
           <DistrictGrid />
           <SafetyTips />
           <EmergencyNumbers />
@@ -159,6 +189,15 @@ function AppContent() {
         <Footer />
       </div>
       <Toast />
+      <EmergencyBar />
+
+      {/* Fullscreen driving alert overlay */}
+      {drivingAlertReport && (
+        <DrivingAlert
+          report={drivingAlertReport}
+          onDismiss={handleDrivingAlertDismiss}
+        />
+      )}
     </>
   );
 }

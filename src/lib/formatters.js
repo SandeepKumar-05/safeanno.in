@@ -1,13 +1,9 @@
-/**
- * Formatting utilities for the app
- */
-import { formatDistanceToNow } from 'date-fns';
-import { DISASTER_TYPES, SEVERITY_LEVELS } from './constants';
+import { formatDistanceToNow, format } from 'date-fns';
 
 /**
- * Get time-ago string from a timestamp
- * @param {string} timestamp — ISO timestamp
- * @returns {string} e.g. "5 minutes ago"
+ * Format a timestamp as "X minutes ago" / "X hours ago"
+ * @param {string} timestamp — ISO string
+ * @returns {string}
  */
 export function timeAgo(timestamp) {
   if (!timestamp) return '';
@@ -19,41 +15,74 @@ export function timeAgo(timestamp) {
 }
 
 /**
- * Look up a disaster type object by id
- * @param {string} typeId
- * @returns {object} the matching DISASTER_TYPES entry
- */
-export function getDisasterType(typeId) {
-  return DISASTER_TYPES.find((t) => t.id === typeId) || DISASTER_TYPES[0];
-}
-
-/**
- * Look up a severity level object by id
- * @param {string} severityId
- * @returns {object} the matching SEVERITY_LEVELS entry
- */
-export function getSeverityLevel(severityId) {
-  return SEVERITY_LEVELS.find((s) => s.id === severityId) || SEVERITY_LEVELS[0];
-}
-
-/**
- * Format coordinates for display
- * @param {number} lat
- * @param {number} lng
+ * Format a timestamp as readable date/time
+ * @param {string} timestamp — ISO string
  * @returns {string}
  */
-export function formatCoords(lat, lng) {
-  if (lat == null || lng == null) return '';
-  return `${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`;
+export function formatDateTime(timestamp) {
+  if (!timestamp) return '';
+  try {
+    return format(new Date(timestamp), 'dd MMM yyyy, hh:mm a');
+  } catch {
+    return '';
+  }
 }
 
 /**
- * Truncate text to a max length with ellipsis
- * @param {string} text
- * @param {number} maxLen
+ * Format a timestamp as short time
+ * @param {string} timestamp — ISO string
  * @returns {string}
  */
-export function truncate(text, maxLen = 100) {
-  if (!text) return '';
-  return text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
+export function formatTime(timestamp) {
+  if (!timestamp) return '';
+  try {
+    return format(new Date(timestamp), 'hh:mm a');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Format distance in km or m
+ * @param {number} km — distance in kilometers
+ * @returns {string}
+ */
+export function formatDistance(km) {
+  if (km == null || isNaN(km)) return '';
+  if (km < 1) {
+    return `${Math.round(km * 1000)}m`;
+  }
+  return `${km.toFixed(1)}km`;
+}
+
+/**
+ * Format duration in minutes or hours
+ * @param {number} minutes — duration in minutes
+ * @returns {string}
+ */
+export function formatDuration(minutes) {
+  if (minutes == null || isNaN(minutes)) return '';
+  if (minutes < 60) {
+    return `${Math.round(minutes)} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+/**
+ * Format accuracy in meters with color hint
+ * @param {number} meters — GPS accuracy in meters
+ * @returns {{ text: string, color: string }}
+ */
+export function formatAccuracy(meters) {
+  if (meters == null) return { text: '', color: '#5e8a9e' };
+  const rounded = Math.round(meters);
+  if (rounded < 20) {
+    return { text: `±${rounded}m 🎯`, color: '#27ae60' };
+  }
+  if (rounded <= 100) {
+    return { text: `±${rounded}m`, color: '#d35400' };
+  }
+  return { text: `±${rounded}m — move outdoors`, color: '#c0392b' };
 }

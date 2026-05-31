@@ -1,24 +1,27 @@
 import React from 'react';
 
 /**
- * App footer with credits
+ * App footer with credits. Adds padding on mobile for emergency bar.
  */
 export default function Footer() {
-  const year = new Date().getFullYear();
-
   return (
     <footer className="app-footer" id="app-footer">
       <div className="app-footer__inner">
         <p className="app-footer__text">
-          🌊 വെള്ളം കേറിയോ? — കേരളത്തിലെ ജനകീയ ദുരന്ത മുന്നറിയിപ്പ് സംവിധാനം
+          വെള്ളം കേറിയോ? — കേരളത്തിന്റെ ദുരന്ത മുന്നറിയിപ്പ്
         </p>
         <p className="app-footer__text-en">
-          Community Disaster Alert System for Kerala &copy; {year}
+          Kerala&apos;s community disaster alert system
         </p>
         <p className="app-footer__credits">
-          Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors
-          &nbsp;|&nbsp;
-          Weather data © <a href="https://mausam.imd.gov.in" target="_blank" rel="noopener noreferrer">IMD</a>
+          Built with ❤️ for Kerala |{' '}
+          <a href="https://github.com/SandeepKumar-05/VellamKeriyo.in" target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>{' '}
+          | Data: IMD + KSDMA |{' '}
+          <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer">
+            OpenStreetMap
+          </a>
         </p>
       </div>
     </footer>

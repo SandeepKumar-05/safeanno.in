@@ -1,98 +1,110 @@
 import React from 'react';
-import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { getDisasterType, getSeverityLevel, timeAgo } from '../../lib/formatters';
+import { Marker, Popup } from 'react-leaflet';
+import { DISASTER_TYPES, SEVERITY_LEVELS } from '../../lib/constants';
+import { timeAgo } from '../../lib/formatters';
 
 /**
- * Create a custom DivIcon for a disaster type
+ * Shared WhatsApp share function
  */
-function createMarkerIcon(type, severity) {
-  const disasterType = getDisasterType(type);
-  const severityLevel = getSeverityLevel(severity);
+function shareReport(report, typeInfo) {
+  const text = `⚠ *വെള്ളം കേറിയോ? Alert*\n\n`
+    + `*${typeInfo?.labelMl || report.type}* — ${report.place_name || 'Kerala'}\n`
+    + `${report.message}\n\n`
+    + `Severity: ${report.severity}\n`
+    + `Reported: ${timeAgo(report.created_at)}\n\n`
+    + `📍 See on map: https://vellomkeriyo.in`;
 
-  return L.divIcon({
-    className: 'incident-marker',
-    html: `
-      <div class="incident-marker__inner" style="
-        background: ${severityLevel.color};
-        box-shadow: 0 0 12px ${severityLevel.color}66;
-      ">
-        <span class="incident-marker__icon">${disasterType.icon}</span>
-      </div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -42],
-  });
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
 }
 
 /**
- * Map marker for a single incident/report with popup details
+ * Custom incident marker with popup showing details,
+ * confirm button, WhatsApp share, and photo.
  */
 export default function IncidentMarker({ report, onConfirm, sessionId }) {
-  const disasterType = getDisasterType(report.type);
-  const severityLevel = getSeverityLevel(report.severity);
+  const typeInfo = DISASTER_TYPES.find((t) => t.id === report.type);
+  const sevInfo = SEVERITY_LEVELS.find((s) => s.id === report.severity);
 
-  // Extract coordinates from PostGIS geometry
+  // Extract coordinates
   let lat, lng;
-  if (report.location && report.location.coordinates) {
+  if (report.location?.coordinates) {
     [lng, lat] = report.location.coordinates;
-  } else if (report.lat && report.lng) {
-    lat = report.lat;
-    lng = report.lng;
   } else {
-    return null;
+    const match = String(report.location || '').match(/POINT\(([^ ]+) ([^ ]+)\)/);
+    if (match) {
+      lng = parseFloat(match[1]);
+      lat = parseFloat(match[2]);
+    }
   }
 
-  const icon = createMarkerIcon(report.type, report.severity);
+  if (lat == null || lng == null) return null;
+
+  // Custom emoji icon for marker
+  const icon = L.divIcon({
+    html: `<span style="font-size:24px">${typeInfo?.icon || '⚠️'}</span>`,
+    className: 'custom-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
 
   return (
     <Marker position={[lat, lng]} icon={icon}>
-      <Popup className="incident-popup" maxWidth={280} minWidth={220}>
-        <div className="incident-popup__content">
-          <div className="incident-popup__header">
-            <span className="incident-popup__type-icon">{disasterType.icon}</span>
-            <div>
-              <strong className="incident-popup__type-label">
-                {disasterType.labelMl}
-              </strong>
-              <span className="incident-popup__type-en">
-                {disasterType.labelEn}
-              </span>
-            </div>
-          </div>
-
-          <span
-            className="incident-popup__severity"
-            style={{ color: severityLevel.color }}
-          >
-            {severityLevel.labelMl} ({severityLevel.labelEn})
-          </span>
-
-          <p className="incident-popup__message">{report.message}</p>
-
-          {report.place_name && (
-            <p className="incident-popup__place">📍 {report.place_name}</p>
-          )}
-
-          <div className="incident-popup__meta">
-            <span className="incident-popup__time">
-              🕐 {timeAgo(report.created_at)}
-            </span>
-            <span className="incident-popup__confirms">
-              ✅ {report.confirm_count || 0} സ്ഥിരീകരണം
-            </span>
-          </div>
-
-          {onConfirm && (
-            <button
-              className="incident-popup__confirm-btn"
-              onClick={() => onConfirm(report.id)}
-              id={`confirm-btn-${report.id}`}
+      <Popup className="marker-popup" maxWidth={280}>
+        <div className="marker-popup__header">
+          <span className="marker-popup__icon">{typeInfo?.icon || '⚠️'}</span>
+          <div>
+            <h3 className="marker-popup__title">
+              {typeInfo?.labelMl || report.type}
+            </h3>
+            <span
+              className="marker-popup__severity"
+              style={{ backgroundColor: sevInfo?.color || '#888' }}
             >
-              ✅ സ്ഥിരീകരിക്കുക (Confirm)
-            </button>
-          )}
+              {sevInfo?.labelEn || report.severity}
+            </span>
+          </div>
+        </div>
+
+        <p className="marker-popup__message">
+          &ldquo;{report.message}&rdquo;
+        </p>
+
+        {report.photo_url && (
+          <img
+            src={report.photo_url}
+            alt="Report photo"
+            className="marker-popup__photo"
+            loading="lazy"
+          />
+        )}
+
+        <p className="marker-popup__place">
+          📍 {report.place_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}
+        </p>
+        <p className="marker-popup__time">
+          ⏱ {timeAgo(report.created_at)}
+        </p>
+        <p className="marker-popup__confirms">
+          ✓ {report.confirm_count || 0} confirmations
+        </p>
+
+        <div className="marker-popup__actions">
+          <button
+            className="marker-popup__btn marker-popup__btn--confirm"
+            onClick={() => onConfirm && onConfirm(report.id)}
+            type="button"
+          >
+            ✓ Confirm
+          </button>
+          <button
+            className="marker-popup__btn marker-popup__btn--share"
+            onClick={() => shareReport(report, typeInfo)}
+            type="button"
+          >
+            📱 Share
+          </button>
         </div>
       </Popup>
     </Marker>

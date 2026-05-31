@@ -1,45 +1,64 @@
 import React from 'react';
 import { useMap } from 'react-leaflet';
-import { MAP_CENTER, MAP_ZOOM } from '../../lib/constants';
+import { formatAccuracy } from '../../lib/formatters';
 
 /**
- * Custom map control buttons — reset view, locate user
+ * Map control buttons — zoom, locate, report.
+ * Shows GPS accuracy badge when position is available.
  */
-export default function MapControls({ userPosition }) {
+export default function MapControls({ onReportClick, userAccuracy }) {
   const map = useMap();
 
-  const handleReset = () => {
-    map.flyTo(MAP_CENTER, MAP_ZOOM, { duration: 1 });
-  };
+  const handleZoomIn = () => map.zoomIn();
+  const handleZoomOut = () => map.zoomOut();
 
   const handleLocate = () => {
-    if (userPosition) {
-      map.flyTo([userPosition.lat, userPosition.lng], 13, { duration: 1 });
-    } else {
-      map.locate({ setView: true, maxZoom: 13 });
-    }
+    map.locate({ setView: true, maxZoom: 14, enableHighAccuracy: true });
   };
+
+  const accInfo = formatAccuracy(userAccuracy);
 
   return (
     <div className="map-controls">
       <button
         className="map-controls__btn"
-        onClick={handleLocate}
-        title="എന്റെ സ്ഥാനം (My location)"
-        aria-label="Go to my location"
-        id="map-locate-btn"
+        onClick={handleZoomIn}
+        title="Zoom in"
+        type="button"
       >
-        📍
+        +
       </button>
       <button
         className="map-controls__btn"
-        onClick={handleReset}
-        title="കേരളം കാണുക (View Kerala)"
-        aria-label="Reset map to Kerala"
-        id="map-reset-btn"
+        onClick={handleZoomOut}
+        title="Zoom out"
+        type="button"
       >
-        🏠
+        −
       </button>
+      <button
+        className="map-controls__btn"
+        onClick={handleLocate}
+        title="My location"
+        type="button"
+      >
+        📍
+      </button>
+      {userAccuracy != null && (
+        <div className="map-controls__accuracy" style={{ color: accInfo.color }}>
+          {accInfo.text}
+        </div>
+      )}
+      {onReportClick && (
+        <button
+          className="map-controls__btn map-controls__btn--report"
+          onClick={onReportClick}
+          title="Report disaster"
+          type="button"
+        >
+          🚨 Report
+        </button>
+      )}
     </div>
   );
 }

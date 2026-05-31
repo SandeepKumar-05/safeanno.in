@@ -1,59 +1,62 @@
 import React from 'react';
-import { formatCoords } from '../../lib/formatters';
+import { useGeolocation } from '../../hooks/useGeolocation';
+import { reverseGeocode } from '../../lib/geocode';
+import { formatAccuracy } from '../../lib/formatters';
 
 /**
- * Location detection component — shows current GPS coords
- * and allows picking a point on the map.
+ * GPS location detection button for report form.
+ * Shows accuracy indicator with color coding.
  */
-export default function LocationDetect({
-  coords,
-  placeName,
-  loading,
-  onDetect,
-}) {
+export default function LocationDetect({ onDetect }) {
+  const { position, accuracy, loading, error, getPosition } = useGeolocation();
+
+  const handleDetect = async () => {
+    getPosition();
+  };
+
+  // When position updates, reverse geocode and notify parent
+  React.useEffect(() => {
+    if (!position) return;
+
+    async function resolve() {
+      const result = await reverseGeocode(position.lat, position.lng);
+      if (onDetect) {
+        onDetect({
+          lat: position.lat,
+          lng: position.lng,
+          placeName: result?.placeName || `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`,
+          district: result?.district || '',
+        });
+      }
+    }
+    resolve();
+  }, [position, onDetect]);
+
+  const accInfo = formatAccuracy(accuracy);
+
   return (
     <div className="location-detect">
-      <label className="form-label">
-        സ്ഥലം (Location) <span className="required">*</span>
-      </label>
-
-      <div className="location-detect__display">
-        {coords ? (
-          <div className="location-detect__info">
-            <span className="location-detect__pin">📍</span>
-            <div>
-              {placeName && (
-                <p className="location-detect__place">{placeName}</p>
-              )}
-              <p className="location-detect__coords">
-                {formatCoords(coords.lat, coords.lng)}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <p className="location-detect__empty">
-            മാപ്പിൽ ടാപ്പ് ചെയ്യുക അല്ലെങ്കിൽ GPS ഉപയോഗിക്കുക
-            <br />
-            <small>Tap on map or use GPS</small>
-          </p>
-        )}
-      </div>
-
       <button
-        type="button"
         className="location-detect__btn"
-        onClick={onDetect}
+        onClick={handleDetect}
         disabled={loading}
-        id="detect-location-btn"
+        type="button"
       >
-        {loading ? (
-          <>
-            <span className="spinner" /> കണ്ടെത്തുന്നു...
-          </>
-        ) : (
-          <>📡 GPS സ്ഥാനം കണ്ടെത്തുക (Detect GPS)</>
-        )}
+        {loading ? '⏳ കണ്ടെത്തുന്നു...' : '📍 എന്റെ ലൊക്കേഷൻ (Detect GPS)'}
       </button>
+
+      {accuracy != null && (
+        <span
+          className="accuracy-badge"
+          style={{ color: accInfo.color, borderColor: accInfo.color }}
+        >
+          {accInfo.text}
+        </span>
+      )}
+
+      {error && (
+        <p className="location-detect__error">{error}</p>
+      )}
     </div>
   );
 }

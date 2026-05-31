@@ -17,6 +17,7 @@ CREATE TABLE reports (
   district      TEXT,
   session_id    TEXT NOT NULL,
   confirm_count INT DEFAULT 0,
+  photo_url     TEXT,
   expires_at    TIMESTAMPTZ NOT NULL
 );
 
@@ -35,6 +36,7 @@ CREATE TABLE routes (
   route             GEOMETRY(LineString, 4326),
   push_subscription JSONB,
   phone             TEXT,
+  districts_on_route TEXT[],
   created_at        TIMESTAMPTZ DEFAULT now()
 );
 
@@ -60,6 +62,19 @@ CREATE TABLE districts (
   alert_text  TEXT,
   updated_at  TIMESTAMPTZ DEFAULT now()
 );
+
+-- ============================================================
+-- Kerala district boundaries for spatial route queries
+-- Download GeoJSON from: https://github.com/datameet/maps/tree/master/Districts
+-- Filter for Kerala districts only
+-- ============================================================
+CREATE TABLE kerala_district_boundaries (
+  id       SERIAL PRIMARY KEY,
+  name_en  TEXT UNIQUE NOT NULL,
+  boundary GEOMETRY(MultiPolygon, 4326)
+);
+
+CREATE INDEX idx_district_boundaries ON kerala_district_boundaries USING GIST(boundary);
 
 -- ============================================================
 -- Seed all 14 Kerala districts
@@ -95,6 +110,7 @@ ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE routes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE confirmations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE districts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE kerala_district_boundaries ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "public read reports" ON reports FOR SELECT USING (true);
 CREATE POLICY "public insert reports" ON reports FOR INSERT WITH CHECK (true);
@@ -103,6 +119,7 @@ CREATE POLICY "public read routes" ON routes FOR SELECT USING (true);
 CREATE POLICY "public insert routes" ON routes FOR INSERT WITH CHECK (true);
 CREATE POLICY "public insert confirmations" ON confirmations FOR INSERT WITH CHECK (true);
 CREATE POLICY "public read confirmations" ON confirmations FOR SELECT USING (true);
+CREATE POLICY "public read boundaries" ON kerala_district_boundaries FOR SELECT USING (true);
 
 -- ============================================================
 -- RPC to safely increment confirm count
@@ -111,3 +128,30 @@ CREATE OR REPLACE FUNCTION increment_confirm(report_id UUID)
 RETURNS void AS $$
   UPDATE reports SET confirm_count = confirm_count + 1 WHERE id = report_id;
 $$ LANGUAGE sql;
+
+-- ============================================================
+-- Function to find districts along a route geometry
+-- ============================================================
+CREATE OR REPLACE FUNCTION get_districts_for_route(route_geom GEOMETRY)
+RETURNS TEXT[] AS $$
+  SELECT ARRAY_AGG(DISTINCT name_en)
+  FROM kerala_district_boundaries
+  WHERE ST_Intersects(boundary, route_geom);
+$$ LANGUAGE sql STABLE;
+
+-- ============================================================
+-- Function to find routes within radius of a point
+-- ============================================================
+CREATE OR REPLACE FUNCTION find_routes_near_point(
+  point_geom GEOMETRY,
+  radius_metres FLOAT DEFAULT 5000
+)
+RETURNS SETOF routes AS $$
+  SELECT r.*
+  FROM routes r
+  WHERE ST_DWithin(
+    r.route::geography,
+    point_geom::geography,
+    radius_metres
+  );
+$$ LANGUAGE sql STABLE;
