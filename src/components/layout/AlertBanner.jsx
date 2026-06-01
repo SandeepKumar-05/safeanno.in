@@ -1,22 +1,22 @@
 import React from 'react';
-import { useDistricts } from '../../hooks/useDistricts';
+import { useWeatherAlerts } from '../../hooks/useWeatherAlerts';
 import { ALERT_LEVEL_COLORS } from '../../lib/constants';
 
 /**
- * Alert banner — shows count of districts on alert.
- * Simplified — detailed marquee is in AlertTicker.jsx.
+ * Alert banner — shows count of districts on weather alert.
+ * Powered by real Open-Meteo weather data.
  */
 export default function AlertBanner() {
-  const { districts } = useDistricts();
+  const { redAlerts, orangeAlerts, yellowAlerts } = useWeatherAlerts();
 
-  const redCount = (districts || []).filter((d) => d.alert_level === 'red').length;
-  const orangeCount = (districts || []).filter((d) => d.alert_level === 'orange').length;
-  const yellowCount = (districts || []).filter((d) => d.alert_level === 'yellow').length;
+  const redCount    = redAlerts.length;
+  const orangeCount = orangeAlerts.length;
+  const yellowCount = yellowAlerts.length;
 
   if (redCount === 0 && orangeCount === 0 && yellowCount === 0) return null;
 
   const parts = [];
-  if (redCount > 0) parts.push(`${redCount} Red`);
+  if (redCount    > 0) parts.push(`${redCount} Red`);
   if (orangeCount > 0) parts.push(`${orangeCount} Orange`);
   if (yellowCount > 0) parts.push(`${yellowCount} Yellow`);
 
@@ -32,12 +32,20 @@ export default function AlertBanner() {
         <span className="alert-banner__icon">⚠️</span>
         <div>
           <span className="alert-banner__title">
-            IMD മുന്നറിയിപ്പ് — Weather Warning Active
+            Weather Warning Active — Kerala
           </span>
           <span className="alert-banner__districts">
-            {parts.join(' • ')} alert{(redCount + orangeCount + yellowCount) > 1 ? 's' : ''}
+            {parts.join(' • ')} alert{(redCount + orangeCount + yellowCount) > 1 ? 's' : ''} across districts
           </span>
         </div>
+        <a
+          href="https://mausam.imd.gov.in/imd_latest/contents/warning.php"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="alert-banner__link"
+        >
+          IMD ↗
+        </a>
       </div>
     </div>
   );

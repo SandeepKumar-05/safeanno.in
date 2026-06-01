@@ -5,6 +5,9 @@ import { formatDistance, formatDuration } from '../../lib/formatters';
 import { useSession } from '../../hooks/useSession';
 import { usePushAlert } from '../../hooks/usePushAlert';
 import { useToast } from '../../hooks/useToast';
+import { useWeatherAlerts } from '../../hooks/useWeatherAlerts';
+import { getRouteAlertLevel, KERALA_DISTRICTS } from '../../lib/weatherAlerts';
+import { ALERT_LEVEL_COLORS } from '../../lib/constants';
 import LocationAutocomplete from '../ui/LocationAutocomplete';
 import LocationDetect from '../report/LocationDetect';
 import SectionHeading from '../ui/SectionHeading';
@@ -14,12 +17,14 @@ import './RouteAlert.css';
  * Route alert subscription panel.
  * Users pick origin + destination via autocomplete,
  * system fetches real road route from OSRM,
- * saves to Supabase with push subscription.
+ * checks IMD/weather alert level for districts along the route,
+ * and saves to Supabase with push subscription.
  */
 export default function RouteAlert({ onRouteCalculated }) {
   const sessionId = useSession();
   const { subscription, isSubscribed, subscribe } = usePushAlert();
   const { addToast } = useToast();
+  const { districts: weatherDistricts, loading: weatherLoading } = useWeatherAlerts();
 
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
@@ -27,6 +32,36 @@ export default function RouteAlert({ onRouteCalculated }) {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [phone, setPhone] = useState('');
+  const [routeSafety, setRouteSafety] = useState(null); // { level, districts }
+
+  /**
+   * Check which Kerala districts the route passes through
+   * using rough bounding box intersection with district HQ coords
+   */
+  const checkRouteDistricts = useCallback((coordinates) => {
+    if (!coordinates || coordinates.length === 0) return [];
+
+    // Get bounding box of route
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    for (const [lng, lat] of coordinates) {
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    }
+
+    // Pad bounding box by 0.3 degrees (~33km)
+    const pad = 0.3;
+    minLat -= pad; maxLat += pad;
+    minLng -= pad; maxLng += pad;
+
+    // Find districts whose HQ falls within the route bounding box
+    const districtNames = KERALA_DISTRICTS
+      .filter((d) => d.lat >= minLat && d.lat <= maxLat && d.lng >= minLng && d.lng <= maxLng)
+      .map((d) => d.name_en);
+
+    return districtNames;
+  }, []);
 
   // Calculate route when both points are set
   const handleCalculateRoute = useCallback(async () => {
@@ -37,6 +72,7 @@ export default function RouteAlert({ onRouteCalculated }) {
 
     setLoading(true);
     setRouteData(null);
+    setRouteSafety(null);
 
     try {
       const route = await getRoadRoute(
@@ -51,6 +87,13 @@ export default function RouteAlert({ onRouteCalculated }) {
         onRouteCalculated(route);
       }
 
+      // Check district safety along route
+      const districtNames = checkRouteDistricts(route.coordinates);
+      if (districtNames.length > 0 && weatherDistricts.length > 0) {
+        const safety = getRouteAlertLevel(districtNames, weatherDistricts);
+        setRouteSafety({ ...safety, checkedDistricts: districtNames });
+      }
+
       addToast('✅ Route calculated!', 'success');
     } catch (err) {
       console.error('Route calculation error:', err);
@@ -58,7 +101,7 @@ export default function RouteAlert({ onRouteCalculated }) {
     } finally {
       setLoading(false);
     }
-  }, [origin, destination, onRouteCalculated, addToast]);
+  }, [origin, destination, onRouteCalculated, addToast, checkRouteDistricts, weatherDistricts]);
 
   // Save route with push subscription
   const handleSaveRoute = useCallback(async () => {
@@ -100,12 +143,72 @@ export default function RouteAlert({ onRouteCalculated }) {
     }
   }, [routeData, origin, destination, sessionId, subscription, isSubscribed, subscribe, phone, addToast]);
 
+  // Render safety banner
+  const renderSafetyBanner = () => {
+    if (!routeSafety) return null;
+
+    const { level, districts } = routeSafety;
+    const color = ALERT_LEVEL_COLORS[level] || ALERT_LEVEL_COLORS.green;
+
+    if (level === 'green') {
+      return (
+        <div className="route-safety-banner route-safety-banner--green">
+          ✅ <strong>Route appears SAFE</strong> — No active weather alerts along this route.
+        </div>
+      );
+    }
+
+    const levelEmoji = level === 'red' ? '🔴' : level === 'orange' ? '🟠' : '🟡';
+    const levelLabel = level === 'red' ? 'RED ALERT' : level === 'orange' ? 'ORANGE ALERT' : 'YELLOW ALERT';
+
+    return (
+      <div
+        className={`route-safety-banner route-safety-banner--${level}`}
+        style={{ borderColor: color, background: `${color}11` }}
+      >
+        <div className="route-safety-banner__header">
+          {levelEmoji} <strong>{levelLabel} — Travel with Caution</strong>
+        </div>
+        <div className="route-safety-banner__districts">
+          Districts on alert along your route:
+          {districts.map((d) => (
+            <span
+              key={d.id}
+              className="route-safety-district"
+              style={{ color, borderColor: color }}
+            >
+              {d.name_ml} ({d.name_en}): {d.alert_text}
+            </span>
+          ))}
+        </div>
+        {level === 'red' && (
+          <div className="route-safety-banner__warning">
+            ⚠️ <strong>RED ALERT: Avoid travel if possible. Extremely hazardous conditions.</strong>
+          </div>
+        )}
+        {level === 'orange' && (
+          <div className="route-safety-banner__warning">
+            ⚠️ Be prepared for heavy rain. Carry emergency supplies. Inform someone of your travel.
+          </div>
+        )}
+        <a
+          href="https://sdma.kerala.gov.in/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="route-safety-banner__link"
+        >
+          Check KSDMA official alerts ↗
+        </a>
+      </div>
+    );
+  };
+
   return (
     <section className="route-alert-section" id="route-alert">
       <SectionHeading
         icon="🛣️"
-        titleMl="റൂട്ട് അലേർട്ട്"
-        subtitleEn="Get alerts along your travel route"
+        titleMl="റൂട്ട് സുരക്ഷ പരിശോധന"
+        subtitleEn="Check Route Safety & Get Alerts"
       />
 
       <div className="route-alert__form">
@@ -165,9 +268,12 @@ export default function RouteAlert({ onRouteCalculated }) {
             disabled={loading || !origin || !destination}
             type="button"
           >
-            {loading ? '⏳ Calculating...' : '🗺️ Calculate Route'}
+            {loading ? '⏳ Calculating...' : '🗺️ Check Route Safety'}
           </button>
         )}
+
+        {/* Safety banner — shown right after route calculation */}
+        {renderSafetyBanner()}
 
         {/* Route info */}
         {routeData && (
@@ -197,6 +303,21 @@ export default function RouteAlert({ onRouteCalculated }) {
                 ✅ Route alert active! Disasters along this route will trigger notifications.
               </div>
             )}
+
+            <button
+              className="route-alert__btn route-alert__btn--reset"
+              onClick={() => {
+                setRouteData(null);
+                setRouteSafety(null);
+                setSaved(false);
+                setOrigin(null);
+                setDestination(null);
+                if (onRouteCalculated) onRouteCalculated(null);
+              }}
+              type="button"
+            >
+              🔁 Check Another Route
+            </button>
           </>
         )}
       </div>

@@ -32,8 +32,8 @@ import MapView from './components/map/MapView';
 import ReportForm from './components/report/ReportForm';
 import LiveFeed from './components/feed/LiveFeed';
 import StatsRow from './components/stats/StatsRow';
-import DistrictGrid from './components/districts/DistrictGrid';
 import RouteAlert from './components/alerts/RouteAlert';
+import WeatherAlertPanel from './components/alerts/WeatherAlertPanel';
 import DrivingAlert from './components/alerts/DrivingAlert';
 import SafetyTips from './components/tips/SafetyTips';
 import EmergencyNumbers from './components/emergency/EmergencyNumbers';
@@ -136,9 +136,9 @@ function AppContent() {
       <RainBackground />
       <div className="app-wrapper">
         <Header onScrollTo={handleScrollTo} />
-        {/* <AlertTicker /> */}
+        <AlertTicker />
         <OfflineBanner />
-        {/* <AlertBanner /> */}
+        <AlertBanner />
 
         <main className="app-main">
           <StatsRow />
@@ -180,8 +180,12 @@ function AppContent() {
             />
           </div>
 
+          {/* Weather Alert Panel — district-wise live alerts */}
+          <WeatherAlertPanel />
+
+          {/* Route Safety Check */}
           <RouteAlert onRouteCalculated={handleRouteCalculated} />
-          {/* <DistrictGrid /> */}
+
           <SafetyTips />
           <EmergencyNumbers />
         </main>

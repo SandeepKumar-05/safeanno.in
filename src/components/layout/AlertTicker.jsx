@@ -1,13 +1,14 @@
 import React from 'react';
-import { useDistricts } from '../../hooks/useDistricts';
+import { useWeatherAlerts } from '../../hooks/useWeatherAlerts';
 
 /**
- * Alert ticker marquee — shows RED and ORANGE district alerts
+ * Alert ticker marquee — shows RED and ORANGE district weather alerts
  * scrolling continuously below the navbar.
  * Returns null if no RED/ORANGE alerts exist.
+ * Powered by real Open-Meteo weather data.
  */
 export default function AlertTicker() {
-  const { districts } = useDistricts();
+  const { districts } = useWeatherAlerts();
 
   // Filter only RED and ORANGE alerts
   const urgentAlerts = (districts || []).filter(
@@ -24,7 +25,7 @@ export default function AlertTicker() {
     return {
       key: d.id,
       level: d.alert_level,
-      text: `${prefix} ${label} — ${d.name_ml}: ${text}`,
+      text: `${prefix} ${label} — ${d.name_ml} (${d.name_en}): ${text}`,
     };
   });
 
