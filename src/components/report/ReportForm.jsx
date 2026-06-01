@@ -7,6 +7,7 @@ import { useSession } from '../../hooks/useSession';
 import CalamitySelector from './CalamitySelector';
 import SeverityPicker from './SeverityPicker';
 import LocationDetect from './LocationDetect';
+import LocationAutocomplete from '../ui/LocationAutocomplete';
 import SectionHeading from '../ui/SectionHeading';
 import './ReportForm.css';
 
@@ -245,7 +246,20 @@ export default function ReportForm({ coords, onClose, onSubmitted }) {
           <label className="report-form__label">
             സ്ഥലം <span className="report-form__label-en">(Location)</span>
           </label>
-          <LocationDetect onDetect={handleLocationDetect} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <LocationDetect onDetect={handleLocationDetect} />
+            <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#7f8c8d' }}>അല്ലെങ്കിൽ തിരയുക (Or search)</div>
+            <LocationAutocomplete 
+              placeholder="കൃത്യമായ സ്ഥലം തിരയുക (Search location)"
+              onSelect={handleLocationDetect}
+              value={location ? { 
+                lat: location.lat, 
+                lng: location.lng, 
+                displayName: location.placeName, 
+                district: location.district 
+              } : null}
+            />
+          </div>
           {location && (
             <p className="report-form__location-preview">
               ✓ {location.placeName}
