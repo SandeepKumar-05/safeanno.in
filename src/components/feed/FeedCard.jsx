@@ -7,7 +7,7 @@ import './FeedCard.css';
  * WhatsApp share function
  */
 function shareReport(report, typeInfo) {
-  const text = `⚠ *വെള്ളം കേറിയോ? Alert*\n\n`
+  const text = `⚠ *SafeAano? Alert*\n\n`
     + `*${typeInfo?.labelMl || report.type}* — ${report.place_name || 'Kerala'}\n`
     + `${report.message}\n\n`
     + `Severity: ${report.severity}\n`

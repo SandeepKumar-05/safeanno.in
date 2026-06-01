@@ -1,4 +1,4 @@
-// വെള്ളം കേറിയോ? — Service Worker
+// SafeAano? — Service Worker
 // Push Notifications + Offline Caching
 
 const CACHE_NAME = 'vellomkeriyo-v1';
@@ -68,7 +68,7 @@ self.addEventListener('fetch', (event) => {
 // ── Push Notification ──────────────────────────────────
 self.addEventListener('push', (event) => {
   let data = {
-    title: '🌊 വെള്ളം കേറിയോ?',
+    title: '🌊 SafeAano?',
     body: 'നിങ്ങളുടെ പ്രദേശത്ത് ദുരന്ത റിപ്പോർട്ട്! (Disaster reported near you!)',
     icon: '/favicon.ico',
     reportId: null,

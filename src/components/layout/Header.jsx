@@ -38,7 +38,7 @@ export default function Header({ onScrollTo }) {
       <header className="app-header" id="app-header">
         <div className="app-header__inner">
           <div className="app-header__left">
-            <a href="/" className="app-header__logo">🌊 വെള്ളം കേറിയോ?</a>
+            <a href="/" className="app-header__logo">🌊 SafeAano?</a>
             <LiveBadge />
           </div>
 

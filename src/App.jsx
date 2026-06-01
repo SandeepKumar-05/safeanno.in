@@ -136,9 +136,9 @@ function AppContent() {
       <RainBackground />
       <div className="app-wrapper">
         <Header onScrollTo={handleScrollTo} />
-        <AlertTicker />
+        {/* <AlertTicker /> */}
         <OfflineBanner />
-        <AlertBanner />
+        {/* <AlertBanner /> */}
 
         <main className="app-main">
           <StatsRow />
@@ -181,7 +181,7 @@ function AppContent() {
           </div>
 
           <RouteAlert onRouteCalculated={handleRouteCalculated} />
-          <DistrictGrid />
+          {/* <DistrictGrid /> */}
           <SafetyTips />
           <EmergencyNumbers />
         </main>

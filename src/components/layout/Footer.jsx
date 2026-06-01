@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="app-footer" id="app-footer">
       <div className="app-footer__inner">
         <p className="app-footer__text">
-          വെള്ളം കേറിയോ? — കേരളത്തിന്റെ ദുരന്ത മുന്നറിയിപ്പ്
+          SafeAano? — കേരളത്തിന്റെ ദുരന്ത മുന്നറിയിപ്പ്
         </p>
         <p className="app-footer__text-en">
           Kerala&apos;s community disaster alert system

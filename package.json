@@ -1,9 +1,9 @@
 {
-  "name": "vellam-keriyo",
+  "name": "safeaano",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "വെള്ളം കേറിയോ? — Real-time community disaster alert system for Kerala",
+  "description": "SafeAano? — Real-time community disaster alert system for Kerala",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
