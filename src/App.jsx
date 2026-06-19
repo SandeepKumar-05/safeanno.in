@@ -120,11 +120,15 @@ function AppContent() {
 
   // Smooth scroll to a section
   const handleScrollTo = useCallback((sectionId) => {
+    if (sectionId === 'report-form') {
+      handleReportClick();
+      return;
+    }
     document.getElementById(sectionId)?.scrollIntoView({
       behavior: 'smooth',
       block: 'start',
     });
-  }, []);
+  }, [handleReportClick]);
 
   // Dismiss driving alert
   const handleDrivingAlertDismiss = useCallback(() => {
@@ -192,6 +196,16 @@ function AppContent() {
 
         <Footer />
       </div>
+      
+      <button
+        className="report-fab"
+        onClick={handleReportClick}
+        type="button"
+        title="Report an Incident"
+      >
+        <span style={{ fontSize: '1.2rem' }}>🚨</span> Report Incident
+      </button>
+
       <Toast />
       <EmergencyBar />
 
