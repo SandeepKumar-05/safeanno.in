@@ -2,14 +2,14 @@ import React from 'react';
 import Skeleton from '../ui/Skeleton';
 import SectionHeading from '../ui/SectionHeading';
 import DistrictCard from './DistrictCard';
-import { useDistricts } from '../../hooks/useDistricts';
+import { useWeatherAlerts } from '../../hooks/useWeatherAlerts';
 
 /**
  * Grid of all 14 Kerala districts with alert levels.
  * Shows skeleton loading state.
  */
 export default function DistrictGrid() {
-  const { districts, loading } = useDistricts();
+  const { districts, loading } = useWeatherAlerts();
 
   return (
     <section id="districts-section">

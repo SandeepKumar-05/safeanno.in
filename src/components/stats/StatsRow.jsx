@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useReports } from '../../hooks/useReports';
-import { useDistricts } from '../../hooks/useDistricts';
+import { useWeatherAlerts } from '../../hooks/useWeatherAlerts';
 import Skeleton from '../ui/Skeleton';
 import SectionHeading from '../ui/SectionHeading';
 
@@ -10,7 +10,7 @@ import SectionHeading from '../ui/SectionHeading';
  */
 export default function StatsRow() {
   const { reports, loading: reportsLoading, getTodayCount } = useReports();
-  const { districts, loading: districtsLoading } = useDistricts();
+  const { activeAlertCount, loading: alertsLoading } = useWeatherAlerts();
   const [todayCount, setTodayCount] = useState(null);
 
   useEffect(() => {
@@ -18,11 +18,9 @@ export default function StatsRow() {
   }, [getTodayCount]);
 
   const activeCount = reports.length;
-  const alertDistricts = (districts || []).filter(
-    (d) => d.alert_level !== 'green'
-  ).length;
+  const alertDistricts = activeAlertCount || 0;
 
-  const isLoading = reportsLoading || districtsLoading;
+  const isLoading = reportsLoading || alertsLoading;
 
   return (
     <section id="stats-section">
