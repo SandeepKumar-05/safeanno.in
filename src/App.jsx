@@ -28,15 +28,17 @@ import RainBackground from './components/ui/RainBackground';
 import Toast from './components/ui/Toast';
 import EmergencyBar from './components/ui/EmergencyBar';
 import OfflineBanner from './components/ui/OfflineBanner';
-import MapView from './components/map/MapView';
-import ReportForm from './components/report/ReportForm';
-import LiveFeed from './components/feed/LiveFeed';
-import StatsRow from './components/stats/StatsRow';
-import RouteAlert from './components/alerts/RouteAlert';
-import WeatherAlertPanel from './components/alerts/WeatherAlertPanel';
-import DrivingAlert from './components/alerts/DrivingAlert';
-import SafetyTips from './components/tips/SafetyTips';
-import EmergencyNumbers from './components/emergency/EmergencyNumbers';
+import StatsRow from './components/stats/StatsRow'; // keep stats row eager since it's above the fold
+
+// Lazy-loaded components
+const MapView = React.lazy(() => import('./components/map/MapView'));
+const ReportForm = React.lazy(() => import('./components/report/ReportForm'));
+const LiveFeed = React.lazy(() => import('./components/feed/LiveFeed'));
+const RouteAlert = React.lazy(() => import('./components/alerts/RouteAlert'));
+const WeatherAlertPanel = React.lazy(() => import('./components/alerts/WeatherAlertPanel'));
+const DrivingAlert = React.lazy(() => import('./components/alerts/DrivingAlert'));
+const SafetyTips = React.lazy(() => import('./components/tips/SafetyTips'));
+const EmergencyNumbers = React.lazy(() => import('./components/emergency/EmergencyNumbers'));
 
 // Hooks
 import { useReports } from './hooks/useReports';

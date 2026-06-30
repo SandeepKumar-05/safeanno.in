@@ -23,7 +23,7 @@ function shareReport(report, typeInfo) {
  * Custom incident marker with popup showing details,
  * confirm button, WhatsApp share, and photo.
  */
-export default function IncidentMarker({ report, onConfirm, sessionId }) {
+const IncidentMarker = React.memo(function IncidentMarker({ report, onConfirm, sessionId }) {
   const typeInfo = DISASTER_TYPES.find((t) => t.id === report.type);
   const sevInfo = SEVERITY_LEVELS.find((s) => s.id === report.severity);
 
@@ -109,4 +109,9 @@ export default function IncidentMarker({ report, onConfirm, sessionId }) {
       </Popup>
     </Marker>
   );
-}
+}, (prevProps, nextProps) => {
+  return prevProps.report.id === nextProps.report.id &&
+         prevProps.report.confirm_count === nextProps.report.confirm_count;
+});
+
+export default IncidentMarker;

@@ -21,7 +21,7 @@ function shareReport(report, typeInfo) {
 /**
  * Individual feed card with WhatsApp share, photo, truncation.
  */
-export default function FeedCard({ report, onClick, onConfirm }) {
+const FeedCard = React.memo(function FeedCard({ report, onClick, onConfirm }) {
   const [expanded, setExpanded] = useState(false);
   const typeInfo = DISASTER_TYPES.find((t) => t.id === report.type);
   const sevInfo = SEVERITY_LEVELS.find((s) => s.id === report.severity);
@@ -101,4 +101,9 @@ export default function FeedCard({ report, onClick, onConfirm }) {
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  return prevProps.report.id === nextProps.report.id &&
+         prevProps.report.confirm_count === nextProps.report.confirm_count;
+});
+
+export default FeedCard;
