@@ -149,51 +149,53 @@ function AppContent() {
         <main className="app-main">
           <StatsRow />
 
-          <div className="map-feed-layout">
-            <div>
-              <MapView
-                ref={mapRef}
-                reports={reports}
-                onMapClick={handleMapClick}
-                onConfirm={handleConfirm}
-                onReportClick={handleReportClick}
-                sessionId={sessionId}
-                userPosition={position}
-                userAccuracy={accuracy}
-                routeData={routeData}
-              />
-
-              {showReportForm && (
-                <ReportForm
-                  coords={reportCoords}
-                  onClose={() => {
-                    setShowReportForm(false);
-                    setReportCoords(null);
-                  }}
-                  onSubmitted={() => {
-                    setShowReportForm(false);
-                    setReportCoords(null);
-                  }}
+          <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Loading interface...</div>}>
+            <div className="map-feed-layout">
+              <div>
+                <MapView
+                  ref={mapRef}
+                  reports={reports}
+                  onMapClick={handleMapClick}
+                  onConfirm={handleConfirm}
+                  onReportClick={handleReportClick}
+                  sessionId={sessionId}
+                  userPosition={position}
+                  userAccuracy={accuracy}
+                  routeData={routeData}
                 />
-              )}
+
+                {showReportForm && (
+                  <ReportForm
+                    coords={reportCoords}
+                    onClose={() => {
+                      setShowReportForm(false);
+                      setReportCoords(null);
+                    }}
+                    onSubmitted={() => {
+                      setShowReportForm(false);
+                      setReportCoords(null);
+                    }}
+                  />
+                )}
+              </div>
+
+              <LiveFeed
+                reports={reports}
+                loading={loading}
+                onCardClick={handleFeedCardClick}
+                onConfirm={handleConfirm}
+              />
             </div>
 
-            <LiveFeed
-              reports={reports}
-              loading={loading}
-              onCardClick={handleFeedCardClick}
-              onConfirm={handleConfirm}
-            />
-          </div>
+            {/* Weather Alert Panel — district-wise live alerts */}
+            <WeatherAlertPanel />
 
-          {/* Weather Alert Panel — district-wise live alerts */}
-          <WeatherAlertPanel />
+            {/* Route Safety Check */}
+            <RouteAlert onRouteCalculated={handleRouteCalculated} />
 
-          {/* Route Safety Check */}
-          <RouteAlert onRouteCalculated={handleRouteCalculated} />
-
-          <SafetyTips />
-          <EmergencyNumbers />
+            <SafetyTips />
+            <EmergencyNumbers />
+          </React.Suspense>
         </main>
 
         <Footer />
@@ -213,10 +215,12 @@ function AppContent() {
 
       {/* Fullscreen driving alert overlay */}
       {drivingAlertReport && (
-        <DrivingAlert
-          report={drivingAlertReport}
-          onDismiss={handleDrivingAlertDismiss}
-        />
+        <React.Suspense fallback={null}>
+          <DrivingAlert
+            report={drivingAlertReport}
+            onDismiss={handleDrivingAlertDismiss}
+          />
+        </React.Suspense>
       )}
     </>
   );

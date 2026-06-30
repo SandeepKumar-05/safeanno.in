@@ -20,6 +20,8 @@ function MapClickHandler({ onClick }) {
   return null;
 }
 
+import MarkerClusterGroup from 'react-leaflet-cluster';
+
 /**
  * Main map view centered on Kerala.
  * Shows incident markers, user position, route polyline.
@@ -65,15 +67,17 @@ const MapView = forwardRef(function MapView(
         <MapClickHandler onClick={onMapClick} />
         <MapControls onReportClick={onReportClick} />
 
-        {/* Incident markers */}
-        {reports.map((report) => (
-          <IncidentMarker
-            key={report.id}
-            report={report}
-            onConfirm={onConfirm}
-            sessionId={sessionId}
-          />
-        ))}
+        {/* Incident markers clustered for performance */}
+        <MarkerClusterGroup chunkedLoading maxClusterRadius={60}>
+          {reports.map((report) => (
+            <IncidentMarker
+              key={report.id}
+              report={report}
+              onConfirm={onConfirm}
+              sessionId={sessionId}
+            />
+          ))}
+        </MarkerClusterGroup>
 
         {/* User position marker */}
         {userPosition && (
